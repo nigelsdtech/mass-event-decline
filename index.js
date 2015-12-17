@@ -6,8 +6,8 @@
 */
 
 
-var cfg        = require('config');
-var log4js     = require('log4js');
+var cfg    = require('config');
+var log4js = require('log4js');
 
 
 /*
