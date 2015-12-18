@@ -55,8 +55,8 @@ var params = {
   timeMax : cfg.get('declineTo')
 }
 
-workPrimary.loadEvents(params, function () {
- 
+workPrimary.loadEventsFromGoogle(params, function ()
+
   var wpEvs = workPrimary.getEvents();
 
   for (var i in wpEvs) { 
@@ -110,14 +110,14 @@ workPrimary.loadEvents(params, function () {
           log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
           continue
         }
-        
+
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = cfg.get('declineComment');
-        
+
         workPrimary.updateEvent(wpEvs[i]);
       }
     }
-    
+
   }
 
 });
