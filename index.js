@@ -6,8 +6,8 @@
 */
 
 
-var cfg    = require('config');
-var log4js = require('log4js');
+var cfg        = require('config');
+var log4js     = require('log4js');
 
 
 /*
@@ -55,8 +55,8 @@ var params = {
   timeMax : cfg.get('declineTo')
 }
 
-workPrimary.loadEventsFromGoogle(params, function ()
-
+workPrimary.loadEventsFromGoogle(params, function () {
+ 
   var wpEvs = workPrimary.getEvents();
 
   for (var i in wpEvs) { 
@@ -78,7 +78,7 @@ workPrimary.loadEventsFromGoogle(params, function ()
     var deletes = cfg.get('deleteEvents')
     for (var j in deletes) {
       if (summary == deletes[j]) {
-        workPrimary.deleteEvent(wpEvs[i]);
+        workPrimary.deleteEventFromGoogle(wpEvs[i]);
         skipEvent = true
       }
     }
@@ -110,14 +110,14 @@ workPrimary.loadEventsFromGoogle(params, function ()
           log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
           continue
         }
-
+        
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = cfg.get('declineComment');
-
-        workPrimary.updateEvent(wpEvs[i]);
+        
+        workPrimary.updateEventOnGoogle(wpEvs[i]);
       }
     }
-
+    
   }
 
 });

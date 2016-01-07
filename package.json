@@ -1,0 +1,24 @@
+{
+  "name": "mass-event-decline",
+  "version": "1.0.0",
+  "description": "Allows you to decline all events (and leave a decline note) in your google calendar between two specified dates. Perfect for declining all invitations whilst you're on leave. There is also the option of setting certain exceptions for events you don't want to delete, or deleting events that you don't want to keep.",
+  "main": "index.js",
+  "scripts": {
+    "start": "scripts/start.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "out of office",
+    "decline",
+    "event",
+    "calendar"
+  ],
+  "author": "Nigel Stephen D'Souza",
+  "license": "ISC",
+  "dependencies": {
+    "config": "1.x",
+    "internet-timestamp": "0.x",
+    "log4js": "0.x",
+    "calendar-model": "github:nigelsdtech/calendar-model"
+  }
+}
