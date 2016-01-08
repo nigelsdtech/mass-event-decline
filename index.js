@@ -6,9 +6,9 @@
 */
 
 
-var cfg        = require('config');
-var log4js     = require('log4js');
-
+var cfg           = require('config');
+var log4js        = require('log4js');
+var calendarModel = require('calendar-model')
 
 /*
 * Initialize
@@ -21,13 +21,6 @@ log4js.configure(cfg.get('log.log4jsConfigs'));
 
 var log = log4js.getLogger(cfg.get('log.appName'));
 log.setLevel(cfg.get('log.level'));
-
-
-
-// Get other application modules
-
-var calendarModel = require('calendar-model')
-
 
 
 
