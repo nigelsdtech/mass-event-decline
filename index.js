@@ -1,8 +1,6 @@
 /*
-* Check your google calendar for a particular event and,
-* if it's present, use a phone divert service to divert
-*
-*
+* Check your google calendar for all events between two dates
+* and decline them, providing a decline note.
 */
 
 
@@ -57,7 +55,7 @@ workPrimary.loadEventsFromGoogle(params, function () {
 
     var skipEvent = false
 
-    // Skip over exceptions
+    // Skip over certain specified events
     var exceptions = cfg.get('exceptionEvents')
     for (var j in exceptions) {
       if (summary == exceptions[j]) {
