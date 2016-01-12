@@ -13,7 +13,7 @@ var calendarModel = require('calendar-model')
 */
 
 
-// logs 
+// logs
 
 log4js.configure(cfg.get('log.log4jsConfigs'));
 
@@ -47,10 +47,10 @@ var params = {
 }
 
 workPrimary.loadEventsFromGoogle(params, function () {
- 
+
   var wpEvs = workPrimary.getEvents();
 
-  for (var i in wpEvs) { 
+  for (var i in wpEvs) {
     var summary   = wpEvs[i].summary;
 
     var skipEvent = false
@@ -101,14 +101,14 @@ workPrimary.loadEventsFromGoogle(params, function () {
           log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
           continue
         }
-        
+
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = cfg.get('declineComment');
-        
+
         workPrimary.updateEventOnGoogle(wpEvs[i]);
       }
     }
-    
+
   }
 
 });
