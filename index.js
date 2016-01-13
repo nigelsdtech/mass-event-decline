@@ -1,33 +1,24 @@
 /*
-* Check your google calendar for a particular event and,
-* if it's present, use a phone divert service to divert
-*
-*
+* Check your google calendar for all events between two dates
+* and decline them, providing a decline note.
 */
 
 
-var cfg        = require('config');
-var log4js     = require('log4js');
-
+var cfg           = require('config');
+var log4js        = require('log4js');
+var calendarModel = require('calendar-model')
 
 /*
 * Initialize
 */
 
 
-// logs 
+// logs
 
 log4js.configure(cfg.get('log.log4jsConfigs'));
 
 var log = log4js.getLogger(cfg.get('log.appName'));
 log.setLevel(cfg.get('log.level'));
-
-
-
-// Get other application modules
-
-var calendarModel = require('calendar-model')
-
 
 
 
@@ -56,15 +47,15 @@ var params = {
 }
 
 workPrimary.loadEventsFromGoogle(params, function () {
- 
+
   var wpEvs = workPrimary.getEvents();
 
-  for (var i in wpEvs) { 
+  for (var i in wpEvs) {
     var summary   = wpEvs[i].summary;
 
     var skipEvent = false
 
-    // Skip over exceptions
+    // Skip over certain specified events
     var exceptions = cfg.get('exceptionEvents')
     for (var j in exceptions) {
       if (summary == exceptions[j]) {
@@ -110,14 +101,14 @@ workPrimary.loadEventsFromGoogle(params, function () {
           log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
           continue
         }
-        
+
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = cfg.get('declineComment');
-        
+
         workPrimary.updateEventOnGoogle(wpEvs[i]);
       }
     }
-    
+
   }
 
 });
