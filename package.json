@@ -4,7 +4,7 @@
   "description": "Allows you to decline all events (and leave a decline note) in your google calendar between two specified dates. Perfect for declining all invitations whilst you're on leave. There is also the option of setting certain exceptions for events you don't want to delete, or deleting events that you don't want to keep.",
   "main": "index.js",
   "scripts": {
-    "start": "sh bin/start.sh",
+    "start": "sh scripts/start.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
