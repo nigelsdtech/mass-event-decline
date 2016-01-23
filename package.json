@@ -20,5 +20,18 @@
     "internet-timestamp": "0.x",
     "log4js": "0.x",
     "calendar-model": "github:nigelsdtech/calendar-model"
-  }
+  },
+  "config": {
+    "appName": "mass-event-decline",
+    "googleAuthScopes": "https://www.googleapis.com/auth/calendar"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nigelsdtech/mass-event-decline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nigelsdtech/mass-event-decline/issues"
+  },
+  "homepage": "https://github.com/nigelsdtech/mass-event-decline#readme",
+  "devDependencies": {}
 }

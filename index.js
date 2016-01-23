@@ -1,19 +1,22 @@
 /*
-* Check your google calendar for all events between two dates
-* and decline them, providing a decline note.
+* Check your google calendar for a particular event and,
+* if it's present, use a phone divert service to divert
+*
+*
 */
 
 
-var cfg           = require('config');
-var log4js        = require('log4js');
+var cfg        = require('config');
+var log4js     = require('log4js');
 var calendarModel = require('calendar-model')
+
 
 /*
 * Initialize
 */
 
 
-// logs
+// logs 
 
 log4js.configure(cfg.get('log.log4jsConfigs'));
 
@@ -22,22 +25,30 @@ log.setLevel(cfg.get('log.level'));
 
 
 
+
 /*
 * Main program
 */
 
 
+log.info('Begin script');
+log.info('============');
+
+
+/*
+ * Setup calendar
+ */
+
 var calendarParams = {
-  name:             "Work Primary",
-  calendarId:       cfg.get('calendars.workPrimary.calendarId'),
-  googleScopes:     cfg.get('calendars.workPrimary.scopes'),
-  tokenFile:        cfg.get('calendars.workPrimary.authFile'),
+  name:             "Target Calendar",
+  calendarId:       cfg.get('calendarId'),
+  googleScopes:     cfg.get('auth.scopes'),
+  tokenFile:        cfg.get('auth.tokenFile'),
   tokenDir:         cfg.get('auth.tokenFileDir'),
   clientSecretFile: cfg.get('auth.clientSecretFile'),
   log4js:           log4js,
-  logLevel :        cfg.get('log.level')
+  logLevel:         cfg.get('log.level')
 }
-
 var workPrimary = new calendarModel(calendarParams);
 
 
@@ -47,15 +58,15 @@ var params = {
 }
 
 workPrimary.loadEventsFromGoogle(params, function () {
-
+ 
   var wpEvs = workPrimary.getEvents();
 
-  for (var i in wpEvs) {
+  for (var i in wpEvs) { 
     var summary   = wpEvs[i].summary;
 
     var skipEvent = false
 
-    // Skip over certain specified events
+    // Skip over exceptions
     var exceptions = cfg.get('exceptionEvents')
     for (var j in exceptions) {
       if (summary == exceptions[j]) {
@@ -92,6 +103,9 @@ workPrimary.loadEventsFromGoogle(params, function () {
     log.debug('Attendees are:')
     log.debug(attendees);
 
+    log.trace('Full event details are:')
+    log.trace(wpEvs[i]);
+
     // Loop through the attendees list and identify yourself
     for (var j in attendees) {
       if (attendees[j].self == true) {
@@ -101,14 +115,14 @@ workPrimary.loadEventsFromGoogle(params, function () {
           log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
           continue
         }
-
+        
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = cfg.get('declineComment');
-
+        
         workPrimary.updateEventOnGoogle(wpEvs[i]);
       }
     }
-
+    
   }
 
 });
