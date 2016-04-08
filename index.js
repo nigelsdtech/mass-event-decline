@@ -6,9 +6,10 @@
 */
 
 
-var cfg        = require('config');
-var log4js     = require('log4js');
-var calendarModel = require('calendar-model')
+const cfg           = require('config')
+     ,log4js        = require('log4js')
+     ,calendarModel = require('calendar-model')
+     ,dateformat    = require('dateformat');
 
 
 /*
@@ -52,13 +53,22 @@ var calendarParams = {
 var workPrimary = new calendarModel(calendarParams);
 
 
+const declineFrom = cfg.get('declineFrom')
+     ,declineTo   = cfg.get('declineTo');
+
 var params = {
-  timeMin : cfg.get('declineFrom'),
-  timeMax : cfg.get('declineTo')
+  timeMin : declineFrom,
+  timeMax : declineTo
 }
 
 workPrimary.loadEventsFromGoogle(params, function () {
  
+  var declineComment = cfg.get('declineComment');
+  declineComment = declineComment.replace(/START_DATE/g, dateformat(declineFrom, 'dd/mm'));
+  declineComment = declineComment.replace(/END_DATE/g,   dateformat(declineTo,   'dd/mm'));
+
+  log.info('Decline comment: ' + declineComment)
+
   var wpEvs = workPrimary.getEvents();
 
   for (var i in wpEvs) { 
@@ -70,7 +80,7 @@ workPrimary.loadEventsFromGoogle(params, function () {
     var exceptions = cfg.get('exceptionEvents')
     for (var j in exceptions) {
       if (summary == exceptions[j]) {
-        log.info('Skipping exception event: ' + workPrimary.getEventString(wpEvs[i]))
+        log.info('SKIP EXCEPTION: ' + workPrimary.getEventString(wpEvs[i]))
         skipEvent = true
       }
     }
@@ -80,7 +90,8 @@ workPrimary.loadEventsFromGoogle(params, function () {
     var deletes = cfg.get('deleteEvents')
     for (var j in deletes) {
       if (summary == deletes[j]) {
-        workPrimary.deleteEventFromGoogle(wpEvs[i]);
+        log.info('DELETE: ' + workPrimary.getEventString(wpEvs[i]))
+        workPrimary.deleteEventFromGoogle(wpEvs[i], function () {});
         skipEvent = true
       }
     }
@@ -117,8 +128,9 @@ workPrimary.loadEventsFromGoogle(params, function () {
         }
         
         wpEvs[i].attendees[j].responseStatus = 'declined';
-        wpEvs[i].attendees[j].comment = cfg.get('declineComment');
+        wpEvs[i].attendees[j].comment = declineComment;
         
+        log.info('DECLINE: ' + workPrimary.getEventString(wpEvs[i]))
         workPrimary.updateEventOnGoogle(wpEvs[i]);
       }
     }
