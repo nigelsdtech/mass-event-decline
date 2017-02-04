@@ -19,10 +19,10 @@ const cfg           = require('config')
 
 // logs 
 
-log4js.configure(cfg.get('log.log4jsConfigs'));
+log4js.configure(cfg.log.log4jsConfigs);
 
-var log = log4js.getLogger(cfg.get('log.appName'));
-log.setLevel(cfg.get('log.level'));
+var log = log4js.getLogger(cfg.log.appName);
+log.setLevel(cfg.log.level);
 
 
 
@@ -42,19 +42,19 @@ log.info('============');
 
 var calendarParams = {
   name:             "Target Calendar",
-  calendarId:       cfg.get('calendarId'),
-  googleScopes:     cfg.get('auth.scopes'),
-  tokenFile:        cfg.get('auth.tokenFile'),
-  tokenDir:         cfg.get('auth.tokenFileDir'),
-  clientSecretFile: cfg.get('auth.clientSecretFile'),
+  calendarId:       cfg.calendarId,
+  googleScopes:     cfg.auth.scopes,
+  tokenFile:        cfg.auth.tokenFile,
+  tokenDir:         cfg.auth.tokenFileDir,
+  clientSecretFile: cfg.auth.clientSecretFile,
   log4js:           log4js,
-  logLevel:         cfg.get('log.level')
+  logLevel:         cfg.log.level
 }
 var workPrimary = new calendarModel(calendarParams);
 
 
-const declineFrom = cfg.get('declineFrom')
-     ,declineTo   = cfg.get('declineTo');
+const declineFrom = cfg.declineFrom
+     ,declineTo   = cfg.declineTo;
 
 var params = {
   timeMin : declineFrom,
@@ -63,7 +63,7 @@ var params = {
 
 workPrimary.loadEventsFromGoogle(params, function () {
  
-  var declineComment = cfg.get('declineComment');
+  var declineComment = cfg.declineComment;
   declineComment = declineComment.replace(/START_DATE/g, dateformat(declineFrom, 'dd/mm'));
   declineComment = declineComment.replace(/END_DATE/g,   dateformat(declineTo,   'dd/mm'));
 
