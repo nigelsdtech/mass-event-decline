@@ -57,56 +57,59 @@ const declineFrom = cfg.declineFrom
      ,declineTo   = cfg.declineTo;
 
 var params = {
-  timeMin : declineFrom,
-  timeMax : declineTo
+  timeMin: declineFrom,
+  timeMax: declineTo
 }
 
-workPrimary.loadEventsFromGoogle(params, function () {
+workPrimary.listEvents(params, function (err, wpEvs) {
  
+  if (err) {
+    log.error('Error: %s, %s\n%s', err.code, err.message, err.stack)
+    return null
+  }
+
   var declineComment = cfg.declineComment;
   declineComment = declineComment.replace(/START_DATE/g, dateformat(declineFrom, 'dd/mm'));
   declineComment = declineComment.replace(/END_DATE/g,   dateformat(declineTo,   'dd/mm'));
 
   log.info('Decline comment: ' + declineComment)
 
-  var wpEvs = workPrimary.getEvents();
-
   for (var i in wpEvs) { 
     var summary   = wpEvs[i].summary;
 
     var skipEvent = false
 
+    var evStr = workPrimary.getEventString(wpEvs[i]);
+
     // Skip over exceptions
     var exceptions = cfg.get('exceptionEvents')
     for (var j in exceptions) {
       if (summary == exceptions[j]) {
-        log.info('SKIP EXCEPTION: ' + workPrimary.getEventString(wpEvs[i]))
+        log.info('SKIP EXCEPTION: ' + evStr)
         skipEvent = true
       }
     }
 
 
     // Delete certain unwanted events
-    var deletes = cfg.get('deleteEvents')
+    var deletes = cfg.deleteEvents
     for (var j in deletes) {
       if (summary == deletes[j]) {
-        log.info('DELETE: ' + workPrimary.getEventString(wpEvs[i]))
+        log.info('DELETE: ' + evStr)
         workPrimary.deleteEventFromGoogle(wpEvs[i], function () {});
         skipEvent = true
       }
     }
 
 
-    if (skipEvent) {
-      continue
-    }
+    if (skipEvent) { continue }
 
 
     var id        = wpEvs[i].id;
     var startTime = wpEvs[i].start.dateTime;
     var endTime   = wpEvs[i].end.dateTime;
 
-    log.debug('Examining: %s', workPrimary.getEventString(wpEvs[i]));
+    log.debug('Examining: %s', evStr);
 
     var attendees = wpEvs[i].attendees;
 
@@ -123,15 +126,29 @@ workPrimary.loadEventsFromGoogle(params, function () {
 
         // Skip ones already declined
         if (wpEvs[i].attendees[j].responseStatus == 'declined') {
-          log.info('Already declined. Skipping: %s', workPrimary.getEventString(wpEvs[i]))
+          log.info('Already declined. Skipping: %s', evStr)
           continue
         }
         
         wpEvs[i].attendees[j].responseStatus = 'declined';
         wpEvs[i].attendees[j].comment = declineComment;
         
-        log.info('DECLINE: ' + workPrimary.getEventString(wpEvs[i]))
-        workPrimary.updateEventOnGoogle(wpEvs[i]);
+        log.info('DECLINE: ' + evStr)
+	workPrimary.updateEvent({
+          id: id,
+          resource: wpEvs[i],
+          retFields: ["id", "attendees(displayName,responseStatus,comment)"]
+	}, function (err, ev) {
+
+	  if (err) {
+	    log.error('Failed to update event: %s, %s\n', err.code, err.message, err.stack)
+	    return null
+          }
+	  log.info('Updated event %s', evStr)
+	  log.trace('Updated event %s. Response\n%s', evStr, JSON.stringify(ev))
+	});
+
+        break;
       }
     }
     
