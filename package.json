@@ -16,7 +16,8 @@
   "author": "Nigel Stephen D'Souza",
   "license": "ISC",
   "dependencies": {
-    "calendar-model": "git://github.com/nigelsdtech/calendar-model.git#34df8f25cf904a68f91ebf1124efd3b63a1bbdfd",
+    "batchflow": "^0.4.0",
+    "calendar-model": "nigelsdtech/calendar-model",
     "config": "1.x",
     "dateformat": "1.0.12",
     "internet-timestamp": "0.x",
