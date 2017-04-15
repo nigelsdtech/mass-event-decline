@@ -1,3 +1,5 @@
+'use strict'
+
 /*
 * Check your google calendar for a particular event and,
 * if it's present, use a phone divert service to divert
@@ -6,10 +8,12 @@
 */
 
 
-const cfg           = require('config')
-     ,log4js        = require('log4js')
-     ,calendarModel = require('calendar-model')
-     ,dateformat    = require('dateformat');
+var
+  batch         = require('batchflow'),
+  calendarModel = require('calendar-model'),
+  cfg           = require('config'),
+  dateformat    = require('dateformat'),
+  log4js        = require('log4js');
 
 
 /*
@@ -17,7 +21,7 @@ const cfg           = require('config')
 */
 
 
-// logs 
+// logs
 
 log4js.configure(cfg.log.log4jsConfigs);
 
@@ -46,9 +50,7 @@ var calendarParams = {
   googleScopes:     cfg.auth.scopes,
   tokenFile:        cfg.auth.tokenFile,
   tokenDir:         cfg.auth.tokenFileDir,
-  clientSecretFile: cfg.auth.clientSecretFile,
-  log4js:           log4js,
-  logLevel:         cfg.log.level
+  clientSecretFile: cfg.auth.clientSecretFile
 }
 var workPrimary = new calendarModel(calendarParams);
 
@@ -57,14 +59,15 @@ const declineFrom = cfg.declineFrom
      ,declineTo   = cfg.declineTo;
 
 var params = {
+  retFields: ["items(attendees(email, responseStatus, self),end,id,start,summary)"],
   timeMin: declineFrom,
   timeMax: declineTo
 }
 
 workPrimary.listEvents(params, function (err, wpEvs) {
- 
+
   if (err) {
-    log.error('Error: %s, %s\n%s', err.code, err.message, err.stack)
+    log.error('Error: %s\n%s', err.code, err.stack)
     return null
   }
 
@@ -74,84 +77,99 @@ workPrimary.listEvents(params, function (err, wpEvs) {
 
   log.info('Decline comment: ' + declineComment)
 
-  for (var i in wpEvs) { 
-    var summary   = wpEvs[i].summary;
 
-    var skipEvent = false
+  batch(wpEvs).parallel(10).each( function (i,wpEv,done) {
 
-    var evStr = workPrimary.getEventString(wpEvs[i]);
+    var summary = wpEv.summary;
+
+    var evStr = workPrimary.getEventString(wpEv);
+
+    log.info('[%s] Examining: %s', i, evStr);
+    log.trace('[%s] Full event details are:\n%s', i, wpEv)
 
     // Skip over exceptions
     var exceptions = cfg.get('exceptionEvents')
-    for (var j in exceptions) {
+    for (var j = 0; j < exceptions.length; j++) {
       if (summary == exceptions[j]) {
-        log.info('SKIP EXCEPTION: ' + evStr)
-        skipEvent = true
+        log.info('[%s] SKIP EXCEPTION: %s ', i, evStr)
+        done()
+        return null
       }
     }
 
 
     // Delete certain unwanted events
     var deletes = cfg.deleteEvents
-    for (var j in deletes) {
+    for (var j = 0; j < deletes.length; j++) {
       if (summary == deletes[j]) {
-        log.info('DELETE: ' + evStr)
-        workPrimary.deleteEventFromGoogle(wpEvs[i], function () {});
-        skipEvent = true
+        log.info('[%s] DELETE: %s', i, evStr)
+        workPrimary.deleteEventFromGoogle(wpEv, function (err) {
+          if (err) {
+            log.error('[%s] Error deleting event: %s', i, JSON.stringify(err))
+          }
+          log.info('[%s] Deleted: %s', i, evStr)
+	});
+        done()
+        return null
       }
     }
 
 
-    if (skipEvent) { continue }
+    var id        = wpEv.id;
+    var startTime = wpEv.start.dateTime;
+    var endTime   = wpEv.end.dateTime;
 
-
-    var id        = wpEvs[i].id;
-    var startTime = wpEvs[i].start.dateTime;
-    var endTime   = wpEvs[i].end.dateTime;
-
-    log.debug('Examining: %s', evStr);
-
-    var attendees = wpEvs[i].attendees;
+    var attendees = wpEv.attendees;
 
     // Get users from the attendees list
-    log.debug('Attendees are:')
-    log.debug(attendees);
-
-    log.trace('Full event details are:')
-    log.trace(wpEvs[i]);
+    log.debug('[%s] Attendees are:\n[%s]', i, JSON.stringify(attendees))
 
     // Loop through the attendees list and identify yourself
-    for (var j in attendees) {
-      if (attendees[j].self == true) {
+    for (var j = 0; j < attendees.length; j++) {
 
-        // Skip ones already declined
-        if (wpEvs[i].attendees[j].responseStatus == 'declined') {
-          log.info('Already declined. Skipping: %s', evStr)
-          continue
-        }
-        
-        wpEvs[i].attendees[j].responseStatus = 'declined';
-        wpEvs[i].attendees[j].comment = declineComment;
-        
-        log.info('DECLINE: ' + evStr)
-	workPrimary.updateEvent({
-          id: id,
-          resource: wpEvs[i],
-          retFields: ["id", "attendees(displayName,responseStatus,comment)"]
-	}, function (err, ev) {
+      var attendee = attendees[j]
 
-	  if (err) {
-	    log.error('Failed to update event: %s, %s\n', err.code, err.message, err.stack)
-	    return null
-          }
-	  log.info('Updated event %s', evStr)
-	  log.trace('Updated event %s. Response\n%s', evStr, JSON.stringify(ev))
-	});
+      // Only looking for my own attendence
+      if (!attendee.self) { continue }
 
-        break;
+      log.debug('[%s][%s] Attendee identified: ', i, j, attendee.email)
+
+      // Skip ones already declined
+      if (attendee.responseStatus == 'declined') {
+        log.info('[%s][%s] Already declined. Skipping: %s', i,j, evStr)
+        done()
+        return null
       }
+
+      log.info('[%s][%s] DECLINE: ', i, j, evStr)
+      workPrimary.updateEvent({
+        id: id,
+        patchOnly: true,
+        resource: {
+          attendees: [{
+            email: attendee.email,
+            responseStatus: "declined",
+            comment: declineComment
+          }]
+        },
+        retFields: ["id", "attendees(displayName,responseStatus,comment)"]
+      }, function (err, ev) {
+
+        if (err) {
+          log.error('[%s][%s] Failed to update event: %s, %s\n', i, j, err.code, err.message, err.stack)
+          done()
+          return null
+        }
+        log.info('[%s][%s] Declined event %s', i, j, evStr)
+        log.trace('[%s][%s] Declined event %s. Response\n%s', i, j, evStr, JSON.stringify(ev))
+
+        done()
+      });
+
+      break;
     }
-    
-  }
+
+  })
+  .end (function() {})
 
 });
