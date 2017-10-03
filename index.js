@@ -137,15 +137,16 @@ workPrimary.listEvents(params, function (err, wpEvs) {
 	workPrimary.updateEvent({
           id: id,
           resource: wpEvs[i],
-          retFields: ["id", "attendees(displayName,responseStatus,comment)"]
+          retFields: ["id", "summary", "attendees(displayName,responseStatus,comment)", "start(dateTime)", "end(dateTime)"]
 	}, function (err, ev) {
 
 	  if (err) {
 	    log.error('Failed to update event: %s, %s\n', err.code, err.message, err.stack)
 	    return null
           }
-	  log.info('Updated event %s', evStr)
-	  log.trace('Updated event %s. Response\n%s', evStr, JSON.stringify(ev))
+          var rejectedEvStr = workPrimary.getEventString(ev);
+          log.info('Updated event %s', rejectedEvStr)
+          log.trace('Updated event %s. Response\n%s', rejectedEvStr, JSON.stringify(ev))
 	});
 
         break;
