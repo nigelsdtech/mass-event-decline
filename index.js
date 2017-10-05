@@ -128,20 +128,21 @@ workPrimary.listEvents(params, function (err, wpEvs) {
     for (var j = 0; j < attendees.length; j++) {
 
       var attendee = attendees[j]
+      var jdx = j
 
       // Only looking for my own attendence
       if (!attendee.self) { continue }
 
-      log.debug('[%s][%s] Attendee identified: ', i, j, attendee.email)
+      log.debug('[%s][%s] Attendee identified: ', i, jdx, attendee.email)
 
       // Skip ones already declined
       if (attendee.responseStatus == 'declined') {
-        log.info('[%s][%s] Already declined. Skipping: %s', i,j, evStr)
+        log.info('[%s][%s] Already declined. Skipping: %s', i,jdx, evStr)
         done()
         return null
       }
 
-      log.info('[%s][%s] DECLINE: ', i, j, evStr)
+      log.info('[%s][%s] DECLINE: ', i, jdx, evStr)
       workPrimary.updateEvent({
         id: id,
         patchOnly: true,
@@ -156,32 +157,18 @@ workPrimary.listEvents(params, function (err, wpEvs) {
       }, function (err, ev) {
 
         if (err) {
-          log.error('[%s][%s] Failed to update event: %s, %s\n', i, j, err.code, err.message, err.stack)
+          log.error('[%s][%s] Failed to update event: %s, %s\n', i, jdx, err.code, err.message, err.stack)
           done()
           return null
         }
         
-        wpEvs[i].attendees[j].responseStatus = 'declined';
-        wpEvs[i].attendees[j].comment = declineComment;
-        
-        log.info('DECLINE: ' + evStr)
-	workPrimary.updateEvent({
-          id: id,
-          resource: wpEvs[i],
-          retFields: ["id", "summary", "attendees(displayName,responseStatus,comment)", "start(dateTime)", "end(dateTime)"]
-	}, function (err, ev) {
-
-	  if (err) {
-	    log.error('Failed to update event: %s, %s\n', err.code, err.message, err.stack)
-	    return null
-          }
-          log.info('[%s][%s] Declined event %s', i, j, evStr)
-          log.trace('[%s][%s] Declined event %s. Response\n%s', i, j, evStr, JSON.stringify(ev))
+        log.info('[%s][%s] Declined event %s', i, jdx, evStr)
+        log.trace('[%s][%s] Declined event %s. Response\n%s', i, jdx, evStr, JSON.stringify(ev))
 
         done()
+        return null
       });
 
-      break;
     }
 
   })
