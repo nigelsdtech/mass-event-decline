@@ -1,8 +1,0 @@
-{
-  "calendarId": "primary",
-  "exceptionEvents": ["ndsouza L1", "ndsouza L2", "OOH (L1)", "OOH (L2)", "Annual leave", "Send handover email", "Steve D'Souza - OOO"],
-  "deleteEvents": ["DON'T BOOK ME OUT DURING LUNCH!!!"],
-  "declineFrom": "2017-04-29 00:00:00",
-  "declineTo":  "2017-05-07 23:59:59",
-  "declineComment": "On annual leave from START_DATE to END_DATE (inclusive)"
-}
